@@ -1,0 +1,278 @@
+'use strict';
+
+/* ===========================
+   HEADER – scroll effect
+   =========================== */
+const header = document.getElementById('header');
+
+window.addEventListener('scroll', () => {
+  header.classList.toggle('scrolled', window.scrollY > 20);
+}, { passive: true });
+
+/* ===========================
+   HAMBURGER MENU
+   =========================== */
+const hamburger = document.getElementById('hamburger');
+const nav       = document.getElementById('nav');
+
+hamburger.addEventListener('click', () => {
+  const open = nav.classList.toggle('open');
+  hamburger.classList.toggle('active', open);
+  hamburger.setAttribute('aria-expanded', String(open));
+});
+
+// Close menu when a nav link is clicked
+nav.querySelectorAll('.nav__link').forEach(link => {
+  link.addEventListener('click', () => {
+    nav.classList.remove('open');
+    hamburger.classList.remove('active');
+    hamburger.setAttribute('aria-expanded', 'false');
+  });
+});
+
+// Close menu when clicking outside
+document.addEventListener('click', (e) => {
+  if (!header.contains(e.target)) {
+    nav.classList.remove('open');
+    hamburger.classList.remove('active');
+    hamburger.setAttribute('aria-expanded', 'false');
+  }
+});
+
+/* ===========================
+   INTERSECTION OBSERVER – animations
+   =========================== */
+const animateObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+      animateObserver.unobserve(entry.target);
+    }
+  });
+}, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+document.querySelectorAll('[data-animate], .problema-card, .servicio-card, .beneficio-item').forEach(el => {
+  animateObserver.observe(el);
+});
+
+/* ===========================
+   ACTIVE NAV LINK on scroll
+   =========================== */
+const sections = document.querySelectorAll('section[id]');
+const navLinks  = document.querySelectorAll('.nav__link');
+
+const sectionObserver = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      const id = entry.target.getAttribute('id');
+      navLinks.forEach(link => {
+        link.classList.toggle('active', link.getAttribute('href') === `#${id}`);
+      });
+    }
+  });
+}, { threshold: 0.35 });
+
+sections.forEach(s => sectionObserver.observe(s));
+
+/* ===========================
+   CONTACT FORM – validation & submit
+   =========================== */
+const form       = document.getElementById('contacto-form');
+const submitBtn  = document.getElementById('submit-btn');
+const btnText    = submitBtn.querySelector('.btn__text');
+const btnLoading = submitBtn.querySelector('.btn__loading');
+const formSuccess = document.getElementById('form-success');
+
+function showError(fieldId, message) {
+  const input = document.getElementById(fieldId);
+  const error = document.getElementById(`${fieldId}-error`);
+  if (input)  input.classList.add('error');
+  if (error)  error.textContent = message;
+}
+
+function clearError(fieldId) {
+  const input = document.getElementById(fieldId);
+  const error = document.getElementById(`${fieldId}-error`);
+  if (input)  input.classList.remove('error');
+  if (error)  error.textContent = '';
+}
+
+function validateForm() {
+  let valid = true;
+
+  const nombre  = document.getElementById('nombre').value.trim();
+  const empresa = document.getElementById('empresa').value.trim();
+  const email   = document.getElementById('email').value.trim();
+  const mensaje = document.getElementById('mensaje').value.trim();
+
+  clearError('nombre');
+  clearError('empresa');
+  clearError('email');
+  clearError('mensaje');
+
+  if (!nombre) {
+    showError('nombre', 'Por favor ingresá tu nombre.');
+    valid = false;
+  }
+
+  if (!empresa) {
+    showError('empresa', 'Por favor ingresá el nombre de tu empresa.');
+    valid = false;
+  }
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email) {
+    showError('email', 'Por favor ingresá tu email.');
+    valid = false;
+  } else if (!emailRegex.test(email)) {
+    showError('email', 'El formato del email no es válido.');
+    valid = false;
+  }
+
+  if (!mensaje) {
+    showError('mensaje', 'Por favor contanos brevemente sobre tu empresa.');
+    valid = false;
+  } else if (mensaje.length < 10) {
+    showError('mensaje', 'El mensaje es demasiado corto.');
+    valid = false;
+  }
+
+  return valid;
+}
+
+// Real-time validation on blur
+['nombre', 'empresa', 'email', 'mensaje'].forEach(id => {
+  const input = document.getElementById(id);
+  if (input) {
+    input.addEventListener('input', () => clearError(id));
+  }
+});
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  if (!validateForm()) return;
+
+  // Show loading state
+  btnText.hidden    = true;
+  btnLoading.hidden = false;
+  submitBtn.disabled = true;
+
+  // Simulate form submission (replace with real endpoint or EmailJS/Formspree)
+  await simulateSubmit();
+
+  // Show success
+  btnText.hidden    = false;
+  btnLoading.hidden = true;
+  submitBtn.disabled = false;
+  form.reset();
+  formSuccess.hidden = false;
+  formSuccess.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+  setTimeout(() => { formSuccess.hidden = true; }, 8000);
+});
+
+function simulateSubmit() {
+  return new Promise(resolve => setTimeout(resolve, 1400));
+}
+
+/* ===========================
+   SERVICIOS SLIDER
+   =========================== */
+(function () {
+  const track    = document.querySelector('.servicios__grid');
+  const viewport = document.querySelector('.slider__viewport');
+  const btnPrev  = document.querySelector('.slider__btn--prev');
+  const btnNext  = document.querySelector('.slider__btn--next');
+  const dotsWrap = document.querySelector('.slider__dots');
+
+  if (!track) return;
+
+  const cards = Array.from(track.children);
+  let current = 0;
+
+  function visibleCount() {
+    if (window.innerWidth <= 640)  return 1;
+    if (window.innerWidth <= 1024) return 2;
+    return 3;
+  }
+
+  function maxIndex() {
+    return Math.max(0, cards.length - visibleCount());
+  }
+
+  function buildDots() {
+    dotsWrap.innerHTML = '';
+    const total = maxIndex() + 1;
+    for (let i = 0; i < total; i++) {
+      const btn = document.createElement('button');
+      btn.className = 'slider__dot' + (i === current ? ' active' : '');
+      btn.setAttribute('aria-label', `Ir al servicio ${i + 1}`);
+      btn.addEventListener('click', () => goTo(i));
+      dotsWrap.appendChild(btn);
+    }
+  }
+
+  function goTo(index) {
+    current = Math.max(0, Math.min(index, maxIndex()));
+    const cardWidth = cards[0].offsetWidth + 24; // card + gap
+    track.style.transform = `translateX(-${current * cardWidth}px)`;
+    btnPrev.disabled = current === 0;
+    btnNext.disabled = current === maxIndex();
+    dotsWrap.querySelectorAll('.slider__dot').forEach((d, i) => {
+      d.classList.toggle('active', i === current);
+    });
+  }
+
+  btnPrev.addEventListener('click', () => goTo(current - 1));
+  btnNext.addEventListener('click', () => goTo(current + 1));
+
+  // Swipe support
+  let touchStartX = 0;
+  viewport.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+  viewport.addEventListener('touchend', e => {
+    const diff = touchStartX - e.changedTouches[0].clientX;
+    if (Math.abs(diff) > 40) goTo(diff > 0 ? current + 1 : current - 1);
+  });
+
+  // Rebuild on resize
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      current = Math.min(current, maxIndex());
+      buildDots();
+      goTo(current);
+    }, 150);
+  });
+
+  buildDots();
+  goTo(0);
+}());
+
+/* ===========================
+   SMOOTH SCROLL for all anchor links
+   =========================== */
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+  anchor.addEventListener('click', (e) => {
+    const target = document.querySelector(anchor.getAttribute('href'));
+    if (!target) return;
+    e.preventDefault();
+    const offset = 76; // header height
+    const top = target.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top, behavior: 'smooth' });
+  });
+});
+
+/* ===========================
+   ACTIVE NAV LINK style (CSS inject)
+   =========================== */
+const style = document.createElement('style');
+style.textContent = `
+  .nav__link.active {
+    color: var(--blue-dark);
+    background: var(--blue-light);
+    font-weight: 600;
+  }
+`;
+document.head.appendChild(style);
