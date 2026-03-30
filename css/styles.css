@@ -1037,6 +1037,10 @@ p.solucion svg {
   min-height: 16px;
 }
 
+.form-success[hidden] {
+  display: none;
+}
+
 .form-success {
   display: flex;
   align-items: center;
