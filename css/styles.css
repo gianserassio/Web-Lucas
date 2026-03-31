@@ -198,6 +198,12 @@ ul { list-style: none; }
   flex-shrink: 0;
 }
 
+.logo__img {
+  height: 48px;
+  width: auto;
+  object-fit: contain;
+}
+
 .logo__text {
   display: flex;
   flex-direction: column;
