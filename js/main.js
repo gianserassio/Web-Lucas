@@ -158,23 +158,37 @@ form.addEventListener('submit', async (e) => {
   btnLoading.hidden = false;
   submitBtn.disabled = true;
 
-  // Simulate form submission (replace with real endpoint or EmailJS/Formspree)
-  await simulateSubmit();
+  try {
+    const data = {
+      nombre:   document.getElementById('nombre').value.trim(),
+      empresa:  document.getElementById('empresa').value.trim(),
+      email:    document.getElementById('email').value.trim(),
+      telefono: document.getElementById('telefono').value.trim(),
+      servicio: document.getElementById('servicio').value,
+      mensaje:  document.getElementById('mensaje').value.trim(),
+    };
 
-  // Show success
-  btnText.hidden    = false;
-  btnLoading.hidden = true;
-  submitBtn.disabled = false;
-  form.reset();
-  formSuccess.hidden = false;
-  formSuccess.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    const res = await fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
 
-  setTimeout(() => { formSuccess.hidden = true; }, 8000);
+    if (!res.ok) throw new Error('Error al enviar');
+
+    // Show success
+    form.reset();
+    formSuccess.hidden = false;
+    formSuccess.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    setTimeout(() => { formSuccess.hidden = true; }, 8000);
+  } catch {
+    alert('Hubo un error al enviar el mensaje. Por favor intentá de nuevo o escribinos directamente.');
+  } finally {
+    btnText.hidden    = false;
+    btnLoading.hidden = true;
+    submitBtn.disabled = false;
+  }
 });
-
-function simulateSubmit() {
-  return new Promise(resolve => setTimeout(resolve, 1400));
-}
 
 /* ===========================
    SERVICIOS SLIDER
